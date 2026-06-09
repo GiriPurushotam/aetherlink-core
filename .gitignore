@@ -1,0 +1,15 @@
+# Security & Environment Overrides
+.env
+.env.local
+*.pem
+*.key
+
+# Dependency Managers & Runtimes
+/backend/vendor/
+/frontend/node_modules/
+
+# IDE & OS Artifacts
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
