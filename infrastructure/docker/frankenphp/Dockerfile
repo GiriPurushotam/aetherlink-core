@@ -1,6 +1,5 @@
 # ==============================================================================
 # Base Image Selection (PHP 8.4 + FrankenPHP Alpine)
-# Alpine Linux ensures the smallest security attack surface and lowest image size.
 # ==============================================================================
 FROM dunglas/frankenphp:1.4-php8.4-alpine AS base
 
@@ -14,7 +13,7 @@ RUN apk add --no-cache \
     linux-headers
 
 # ==============================================================================
-# High-Performance PHP Extension Installation via Official Installer
+# High-Performance PHP Extensions
 # ==============================================================================
 RUN install-php-extensions \
     opcache \
@@ -23,6 +22,11 @@ RUN install-php-extensions \
     redis \
     intl \
     zip
+
+# ==============================================================================
+# Pro-Grade Multi-Stage Binary Ingestion: Install Composer Natively
+# ==============================================================================
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
 # ==============================================================================
 # Production-Grade PHP/OpCache Configuration Layer
@@ -39,15 +43,20 @@ RUN { \
     } > $PHP_INI_DIR/conf.d/opcache-optimized.ini
 
 # ==============================================================================
-# Security & Process Engineering: Non-Root Execution
-# Container processes should never run as root in production environments.
+# Security & Process Engineering: Non-Root Execution Setup
 # ==============================================================================
 RUN adduser -D -u 1000 -g 1000 aether_worker
 
 # Establish the standard workspace directory
 WORKDIR /app
 
-# Give our worker permission over the execution workspace
-RUN chown -R aether_worker:aether_worker /app
+# Pre-forge Caddy's system storage directories and bind ownership to the worker
+RUN mkdir -p /data/caddy /config/caddy
+
+# Give our worker explicit permissions over execution and system state folders
+RUN chown -R aether_worker:aether_worker /app /data /config
+
+# Define the high-performance public web entrypoint context natively
+ENV PUBLIC_WEB_ROOT=/app/public
 
 USER aether_worker

@@ -13,3 +13,7 @@
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Ignore local Docker Runtime data engines
+infrastructure/docker/postgres/data/
+infrastructure/docker/redis/data
