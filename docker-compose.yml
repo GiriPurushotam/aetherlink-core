@@ -5,7 +5,7 @@ services:
   aether_app:
     build:
       context: .
-      dockerfile: .infrastructure/docker/frankenphp/Dockerfile
+      dockerfile: ./infrastructure/docker/frankenphp/Dockerfile
     container_name: aether_app
     restart: unless-stopped
     ports:
@@ -38,7 +38,7 @@ services:
       POSTGRES_USER: ${DB_USERNAME:-aether_admin}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secret_development_password}
     volumes:
-      - .infrastructure/docker/postgres/data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/data:/var/lib/postgresql/data
     networks:
       - aether_private
     healthcheck:
@@ -56,7 +56,7 @@ services:
     restart: unless-stopped
     command: redis-server --requirepass ${REDIS_PASSWORD:-secret_development_password}
     volumes:
-      - .infrastructure/docker/redis/data:/data
+      - ./infrastructure/docker/redis/data:/data
     networks:
       - aether_private
     healthcheck:
