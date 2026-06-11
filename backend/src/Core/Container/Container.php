@@ -50,8 +50,8 @@ final class Container
     public function singleton(string $id, callable $resolver): void
     {
         $this->definitions[$id] = function (self $container) use ($resolver, $id) {
-            if (!isset($this->definitions[$id])) {
-                $this->definitions[$id] = $resolver($container);
+            if (!isset($this->instances[$id])) {
+                $this->instances[$id] = $resolver($container);
             }
 
             return $this->instances[$id];
@@ -74,6 +74,7 @@ final class Container
         // If no definitions exists, attemp Auto-wiring via the PHP Reflection Engine
         return $this->resolveAutoWiredClass($id);
     }
+
 
 
     public function resolveAutoWiredClass(string $id): mixed
