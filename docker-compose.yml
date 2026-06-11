@@ -39,7 +39,7 @@ services:
       POSTGRES_USER: ${DB_USERNAME:-aether_admin}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-secret_development_password}
     volumes:
-      - ./infrastructure/docker/postgres/data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data # Upgraded to Named Volume
     networks:
       - aether_private
     healthcheck:
@@ -57,7 +57,7 @@ services:
     restart: unless-stopped
     command: redis-server --requirepass ${REDIS_PASSWORD:-secret_development_password}
     volumes:
-      - ./infrastructure/docker/redis/data:/data
+      - redis_data:/data # Upgraded to Named Volume
     networks:
       - aether_private
     healthcheck:
@@ -76,3 +76,12 @@ networks:
   aether_private:
     name: aether_private
     driver: bridge
+
+    # ==============================================================================
+# High-Performance Named Volumes Directory
+# ==============================================================================
+volumes:
+  db_data:
+    name: aether_db_data
+  redis_data:
+    name: aether_redis_data
