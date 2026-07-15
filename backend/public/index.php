@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use AetherLink\Core\Container\Container;
+use AetherLink\Core\Controllers\UserController;
+use AetherLink\Core\Http\Request;
+use AetherLink\Core\Routing\Router;
 use AetherLink\Core\Services\UserRepository;
 
 //1. Core Lifecycle: Ingest the freshly compiled PSR-4 autoloader matrix
@@ -18,16 +21,29 @@ require_once __DIR__ . '/../vendor/autoload.php';
 // $kernel = new Kernel($env, $debug);
 // $kernel->boot();
 
+
+
+// $userRepo = $container->make(UserRepository::class);
+
+// //4. Return an explicit system status contract to the client
+// header('Content-Type: application/json; charset=utf-8');
+
+// echo json_encode([
+//     'status' => 'online',
+//     'service' => 'AetherLink Core Backend Test',
+//     'engine' => 'Aetherlink Engine core container test',
+//     'result' => $userRepo->getUserData(43)
+// ], JSON_THROW_ON_ERROR);
+
+
+// ------------------ Test ROute Dispatch --------------------------//
 $container = new Container();
+$router = new Router($container);
 
-$userRepo = $container->make(UserRepository::class);
+$router->registerController(UserController::class);
 
-//4. Return an explicit system status contract to the client
-header('Content-Type: application/json; charset=utf-8');
 
-echo json_encode([
-    'status' => 'online',
-    'service' => 'AetherLink Core Backend',
-    'engine' => 'Aetherlink Engine core container test',
-    'result' => $userRepo->getUserData(42)
-], JSON_THROW_ON_ERROR);
+$request = Request::createFromGlobals();
+$response = $router->dispatch($request);
+
+$response->send();
