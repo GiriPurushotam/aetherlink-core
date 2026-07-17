@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AetherLink\Core\Routing;
 
 use AetherLink\Core\Container\Container;
+use AetherLink\Core\Http\MiddlewareInterface;
 use AetherLink\Core\Http\Request;
 use AetherLink\Core\Http\Response;
 use ReflectionClass;
@@ -44,7 +45,8 @@ final class Router
 
                 $this->routes[strtoupper($routeInstance->method)][$path] = [
                     'controller' => $controllerClass,
-                    'action' => $method->getName()
+                    'action' => $method->getName(),
+                    'middleware' => $routeInstance->middleware // Save Configure Middleware
                 ];
             }
         }
@@ -62,20 +64,33 @@ final class Router
 
         if (!isset($this->routes[$method][$path])) {
             header("HTTP/1.1 404 Not Found");
-            return Response::json(['error' => 'Rresource route not found inside the Aetherlink system architecture.']);
+            return Response::json(['error' => 'Rresource route not found inside the Aetherlink system architecture.'], 404);
         }
 
         $route = $this->routes[$method][$path];
 
-        $controllerInstance = $this->container->make($route['controller']);
-        $action = $route['action'];
+        //1.Compile the core controller action layer as the absolute core of the onion
+        $coreExecutionNode = function (Request $req) use ($route): Response {
+            $controllerInstance = $this->container->make($route['controller']);
+            $action = $route['action'];
+            return $controllerInstance->$action($req);
+        };
 
-        $response = $controllerInstance->$action($request);
+        // 2. Reverse the middleware array to build the recursive wrapped execution chain from the inside out.
+        $pipeline = $coreExecutionNode;
+        $middlewareStack = array_reverse($route->middleware ?? $route['middleware']);
+        foreach ($middlewareStack as $middlewareClass) {
+            $pipeline = function (Request $req) use ($middlewareClass, $pipeline): Response {
+                // Resolve the middleware out of the DI container with auto-wiring capibilities 
+                $middleInstance = $this->container->make($middlewareClass);
 
-        if (!$response instanceof Response) {
-            throw new RuntimeException(sprintf('Controller action %s::%s failed to return a valid Http/Response object contract.', $route['controller'], $action));
+                if (!$middleInstance instanceof MiddlewareInterface) {
+                    throw new RuntimeException(sprintf('Class [%s] must implement MiddlewareInterface. ', $middlewareClass));
+                }
+
+                return $middleInstance->handle($req, $pipeline);
+            };
         }
-
-        return $response;
+        return $pipeline($request);
     }
 }

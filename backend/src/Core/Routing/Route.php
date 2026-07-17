@@ -12,9 +12,13 @@ use Attribute;
  */
 #[Attribute(Attribute::TARGET_METHOD)]
 readonly final class Route
+/**
+ * @param array<class-string> $middleware Array of middleware class strings to execute.
+ */
 {
     public function __construct(
         public string $path,
-        public string $method = 'GET'
+        public string $method = 'GET',
+        public array $middleware = []
     ) {}
 }
