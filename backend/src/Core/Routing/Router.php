@@ -78,7 +78,7 @@ final class Router
 
         // 2. Reverse the middleware array to build the recursive wrapped execution chain from the inside out.
         $pipeline = $coreExecutionNode;
-        $middlewareStack = array_reverse($route->middleware ?? $route['middleware']);
+        $middlewareStack = array_reverse($route['middleware'] ?? []);
         foreach ($middlewareStack as $middlewareClass) {
             $pipeline = function (Request $req) use ($middlewareClass, $pipeline): Response {
                 // Resolve the middleware out of the DI container with auto-wiring capibilities 
