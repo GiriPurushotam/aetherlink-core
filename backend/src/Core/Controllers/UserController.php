@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AetherLink\Core\Controllers;
 
 use AetherLink\Core\Http\Middleware\AuthenticateApiKey;
+use AetherLink\Core\Http\Request;
 use AetherLink\Core\Http\Response;
 use AetherLink\Core\Routing\Route;
 use AetherLink\Core\Services\UserRepository;
@@ -18,11 +19,12 @@ final class UserController
     ) {}
 
     #[Route(path: '/', method: 'GET')]
-    public function index(): Response
+    public function index(Request $request): Response
     {
         return Response::json([
             'status' => 'active',
-            'data' => 'Welcome to AetherLink Endpoint Matrix'
+            'data' => 'Welcome to AetherLink Endpoint Matrix',
+            'postgres_telemetry' => $this->userRepository->getSystemHealth()
         ]);
     }
 
@@ -31,7 +33,6 @@ final class UserController
     {
         return Response::json([
             'status' => 'success',
-            'user_payload' => $this->userRepository->getUserData(99)
         ]);
     }
 }

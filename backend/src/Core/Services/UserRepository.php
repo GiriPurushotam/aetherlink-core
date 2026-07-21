@@ -13,8 +13,9 @@ class UserRepository
         private DatabaseConnection $db
     ) {}
 
-    public function getUserData(int $id): string
+    public function getSystemHealth(): array
     {
-        return $this->db->query("SELECT * FROM users WHERE id = " . $id);
+        $result = $this->db->query("SELECT version(), current_database() as database, now() as server_time;");
+        return $result[0] ?? [];
     }
 }
