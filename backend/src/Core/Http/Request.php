@@ -58,4 +58,9 @@ readonly final class Request
             headers: $headers
         );
     }
+
+    public static function capture(): self
+    {
+        return self::createFromGlobals();
+    }
 }
