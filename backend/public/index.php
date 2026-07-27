@@ -2,14 +2,11 @@
 
 declare(strict_types=1);
 
-use AetherLink\Core\Config\Env;
 use AetherLink\Core\Container\Container;
-use AetherLink\Core\Controllers\UserController;
-use AetherLink\Core\Database\DatabaseConfig;
-use AetherLink\Core\Database\DatabaseConnection;
 use AetherLink\Core\Database\DatabaseConnectionInterface;
 use AetherLink\Core\Exceptions\InvalidEnvironmentException;
 use AetherLink\Core\Http\Request;
+use AetherLink\Core\Kernel\AppKernel;
 use AetherLink\Core\Routing\Router;
 
 //1. Core Lifecycle: Ingest the freshly compiled PSR-4 autoloader matrix
@@ -20,30 +17,8 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 
 try {
-    Env::load(dirname(__DIR__) . '/.env');
-    $dbConfig = DatabaseConfig::createFromEnv();
-    $container = new Container();
-
-    //Register Database configuration and connection Singleton
-    $container->singleton(DatabaseConfig::class, static fn(): DatabaseConfig => $dbConfig);
-
-    $container->singleton(DatabaseConnectionInterface::class, static function (Container $c): DatabaseConnection {
-        /** @var  DatabaseConfig $config */
-        $config = $c->make(DatabaseConfig::class);
-
-        return new DatabaseConnection(
-            dsn: $config->getDsn(),
-            username: $config->username,
-            password: $config->password
-        );
-    });
-
-    $container->singleton(Router::class, static function (Container $c): Router {
-        $router = new Router($c);
-
-        $router->registerController(UserController::class);
-        return $router;
-    });
+    $kernel = new AppKernel();
+    $container = $kernel->boot(dirname(__DIR__));
 } catch (InvalidEnvironmentException $e) {
     http_response_code(500);
     header('Content-Type: application/json');

@@ -15,7 +15,7 @@ class UserRepository
 
     public function getSystemHealth(): array
     {
-        $result = $this->db->query("SELECT version(), current_database() as database, now() as server_time;");
+        $result = $this->db->query("SELECT version(), current_database() as database, (now() AT TIME ZONE 'Asia/Kathmandu')::timestamp(0) as server_time;");
         $row = $result->fetch();
         return $row !== false ? $row : [];
     }
