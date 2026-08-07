@@ -147,6 +147,6 @@ final class DatabaseConnection implements DatabaseConnectionInterface
         $sqlState = $e->getCode();
         //PostgreSQL connection error codes (08006, 08001, 08004, 57P01).
         return in_array($sqlState, ['08006', '08001', '08004', '57P01'], true)
-            || str_contains(strtolower($e->getMessage()), 'Server Closed The Connection Unexpectedly. ');
+            || str_contains(strtolower($e->getMessage()), 'server closed the connection unexpectedly. ');
     }
 }
