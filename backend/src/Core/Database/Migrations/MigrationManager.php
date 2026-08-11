@@ -152,7 +152,7 @@ final readonly class MigrationManager
     private function resolveClassName(string $filePath): string
     {
         $filename = pathinfo($filePath, PATHINFO_FILENAME);
-        return sprintf('AetherLink\\Dataabase\\Migrations\\%s', $filename);
+        return sprintf('AetherLink\\Core\\Database\\Migrations\\%s', $filename);
     }
 
     private function instantiateMigration(string $filePath, string $className): MigrationInterface
@@ -162,7 +162,7 @@ final readonly class MigrationManager
         }
 
         if (!class_exists($className, false)) {
-            throw new RuntimeException(sprintf('Migration class "%s" was not found in file "%s".', $className, $file));
+            throw new RuntimeException(sprintf('Migration class "%s" was not found in file "%s".', $className, $filePath));
         }
 
         $instance = new $className();
