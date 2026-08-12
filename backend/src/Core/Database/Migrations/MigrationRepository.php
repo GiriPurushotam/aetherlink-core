@@ -31,7 +31,7 @@ final readonly class MigrationRepository
             id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
             migration VARCHAR(255) NOT NULL UNIQUE,
             batch INT NOT NULL,
-            executed_at TIMESTAMPZ NOT NULL DEFAULT CURRENT_TIMESTAMP 
+            executed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP 
             );',
             $this->tableName
         );

@@ -152,7 +152,7 @@ final readonly class MigrationManager
     private function resolveClassName(string $filePath): string
     {
         $filename = pathinfo($filePath, PATHINFO_FILENAME);
-        return sprintf('AetherLink\\Core\\Database\\Migrations\\%s', $filename);
+        return sprintf('AetherLink\\Core\\Database\\Migrations\\Files\\%s', $filename);
     }
 
     private function instantiateMigration(string $filePath, string $className): MigrationInterface
