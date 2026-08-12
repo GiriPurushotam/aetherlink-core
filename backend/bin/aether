@@ -1,0 +1,176 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use AetherLink\Core\Database\DatabaseConnectionInterface;
+use AetherLink\Core\Database\Migrations\MigrationManager;
+use AetherLink\Core\Database\Migrations\MigrationRepository;
+use AetherLink\Core\Kernel\AppKernel;
+
+// 1. Locate Composer Autoloader inside /app (or relative to backend/bin)
+$autoloaderPaths = [
+    __DIR__ . '/../vendor/autoload.php',
+    '/app/vendor/autoload.php',
+];
+
+$autoloader = null;
+foreach ($autoloaderPaths as $path) {
+    if (file_exists($path)) {
+        $autoloader = $path;
+        break;
+    }
+}
+
+if ($autoloader === null) {
+    fwrite(STDERR, "\033[31m[ERROR] Composer autoloader not found. Run 'composer install'.\033[0m\n");
+    exit(1);
+}
+
+require_once $autoloader;
+
+// 2. Boot Application Kernel & DI Container
+$basePath = dirname(__DIR__);
+$kernel = new AppKernel();
+$container = $kernel->boot($basePath);
+
+// 3. Console Terminal Styler (ANSI Colors)
+final readonly class Console
+{
+    public static function info(string $message): void
+    {
+        echo "\033[32m[INFO]\033[0m " . $message . PHP_EOL;
+    }
+
+    public static function warning(string $message): void
+    {
+        echo "\033[33m[WARN]\033[0m " . $message . PHP_EOL;
+    }
+
+    public static function error(string $message): void
+    {
+        fwrite(STDERR, "\033[31m[ERROR]\033[0m " . $message . PHP_EOL);
+    }
+
+    public static function line(string $message = ''): void
+    {
+        echo $message . PHP_EOL;
+    }
+}
+
+// 4. Resolve Arguments
+$args = $argv;
+array_shift($args); // Remove script path
+
+$command = $args[0] ?? 'help';
+$param = $args[1] ?? null;
+
+// Resolve Migrations Directory Path
+$migrationsPath = $basePath . '/src/Core/Database/Migrations/Files';
+
+if (!is_dir($migrationsPath)) {
+    mkdir($migrationsPath, 0755, true);
+}
+
+/** @var DatabaseConnectionInterface $db */
+$db = $container->make(DatabaseConnectionInterface::class);
+
+$repository = new MigrationRepository($db);
+$manager = new MigrationManager($db, $repository, $migrationsPath);
+
+// 5. Command Routing
+try {
+    switch ($command) {
+        case 'migrate':
+            Console::line("\033[1mRunning Database Migrations...\033[0m");
+            Console::line("----------------------------------");
+
+            $applied = $manager->migrate(static function (string $msg): void {
+                Console::info($msg);
+            });
+
+            if (empty($applied)) {
+                Console::warning("Nothing to migrate. Schema is up to date.");
+            } else {
+                Console::line("----------------------------------");
+                Console::info(sprintf("Successfully applied %d migration(s).", count($applied)));
+            }
+            break;
+
+        case 'migrate:rollback':
+            Console::line("\033[1mRolling Back Database Migrations...\033[0m");
+            Console::line("----------------------------------");
+
+            $rolledBack = $manager->rollback(static function (string $msg): void {
+                Console::warning($msg);
+            });
+
+            if (empty($rolledBack)) {
+                Console::info("Nothing to roll back. No migration batches found.");
+            } else {
+                Console::line("----------------------------------");
+                Console::info(sprintf("Successfully rolled back %d migration(s).", count($rolledBack)));
+            }
+            break;
+
+        case 'make:migration':
+            if ($param === null || trim($param) === '') {
+                Console::error("Migration name is required.");
+                Console::line("Usage: php bin/aether make:migration <migration_name>");
+                exit(1);
+            }
+
+            $snakeName = strtolower((string) preg_replace('/(?<!^)[A-Z]/', '_$0', $param));
+            $timestamp = date('YmdHis');
+            $className = sprintf('Version%s_%s', $timestamp, $snakeName);
+            $filePath = sprintf('%s/%s.php', $migrationsPath, $className);
+
+            $stub = <<<PHP
+<?php
+
+declare(strict_types=1);
+
+namespace AetherLink\\Core\\Database\\Migrations\\Files;
+
+use AetherLink\\Core\\Database\\DatabaseConnectionInterface;
+use AetherLink\\Core\\Database\\Migrations\\AbstractMigration;
+
+final class {$className} extends AbstractMigration
+{
+    public function up(DatabaseConnectionInterface \$connection): void
+    {
+        // \$connection->getPdo()->exec("CREATE TABLE example (id INT PRIMARY KEY);");
+    }
+
+    public function down(DatabaseConnectionInterface \$connection): void
+    {
+        // \$connection->getPdo()->exec("DROP TABLE IF EXISTS example;");
+    }
+}
+PHP;
+
+            file_put_contents($filePath, $stub);
+            Console::info(sprintf("Created Migration: %s", relativePath($filePath)));
+            break;
+
+        case 'help':
+        default:
+            Console::line("\033[1mAetherLink Framework CLI\033[0m");
+            Console::line("Usage: php bin/aether <command> [options]");
+            Console::line();
+            Console::line("Available Commands:");
+            Console::line("  \033[32mmigrate\033[0m             Run all outstanding database migrations");
+            Console::line("  \033[32mmigrate:rollback\033[0m    Roll back the latest batch of applied migrations");
+            Console::line("  \033[32mmake:migration\033[0m      Generate a new timestamped migration class");
+            break;
+    }
+} catch (\Throwable $e) {
+    Console::error($e->getMessage());
+    Console::line($e->getTraceAsString());
+    exit(1);
+}
+
+function relativePath(string $fullPath): string
+{
+    return str_replace('/app/', '', $fullPath);
+}
