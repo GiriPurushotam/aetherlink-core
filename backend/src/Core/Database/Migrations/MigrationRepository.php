@@ -129,7 +129,7 @@ final readonly class MigrationRepository
     public function delete(string $migration): void
     {
         $stmt = $this->connection->prepare(
-            sprintf('DELETE FROM %s WHERE migration = :migraion', $this->tableName)
+            sprintf('DELETE FROM %s WHERE migration = :migration', $this->tableName)
         );
 
         $stmt->execute([
